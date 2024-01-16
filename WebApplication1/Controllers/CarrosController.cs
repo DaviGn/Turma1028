@@ -23,9 +23,25 @@ public class CarrosController : ControllerBase
     };
 
     [HttpGet]
-    public IActionResult List()
+    public IActionResult List([FromQuery] CarroFilters filtros)
     {
-        return Ok(_carros);
+        IEnumerable<Carro> response = _carros;
+
+        if (!string.IsNullOrEmpty(filtros.Marca))
+            response = response.Where(x => x.Marca.Contains(filtros.Marca));
+
+        if (!string.IsNullOrEmpty(filtros.Modelo))
+            response = response.Where(x => x.Modelo.Contains(filtros.Modelo));
+
+        if (!string.IsNullOrEmpty(filtros.OrderBy))
+        {
+            if (filtros.OrderBy == "Marca")
+                response = response.OrderBy(x => x.Marca);
+            else if (filtros.OrderBy == "Modelo")
+                response = response.OrderBy(x => x.Modelo);
+        }
+
+        return Ok(response.ToList());
     }
 
     // Route param
@@ -108,6 +124,13 @@ public class CarrosController : ControllerBase
         _carros.Remove(carroOriginal);
         return NoContent();
     }
+}
+
+public class CarroFilters
+{
+    public string? Marca { get; set; }
+    public string? Modelo { get; set; }
+    public string? OrderBy { get; set; }
 }
 
 public class Carro
