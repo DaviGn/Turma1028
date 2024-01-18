@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
+﻿using Application.Services;
+using Domain.Entities;
+using Domain.Requests;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebApplication1.Controllers;
 
@@ -8,120 +10,54 @@ namespace WebApplication1.Controllers;
 //Update
 //Delete
 
+// Inversion of Control
+// Injeção de dependência
+
 [ApiController]
 [Route("[controller]")]
 public class CarrosController : ControllerBase
 {
-    private static List<Carro> _carros = new List<Carro>
+    private readonly ICarService _service;
+
+    public CarrosController(ICarService service)
     {
-        new Carro(1, "Porsche", "Cayanne"),
-        new Carro(2, "Porsche", "911"),
-        new Carro(3, "Audi", "A3"),
-        new Carro(4, "Audi", "A4"),
-        new Carro(5, "BMW", "320"),
-        new Carro(6, "BMW", "X7"),
-    };
+        _service = service;
+    }
 
     [HttpGet]
     public IActionResult List([FromQuery] CarroFilters filtros)
     {
-        IEnumerable<Carro> response = _carros;
-
-        if (!string.IsNullOrEmpty(filtros.Marca))
-            response = response.Where(x => x.Marca.Contains(filtros.Marca));
-
-        if (!string.IsNullOrEmpty(filtros.Modelo))
-            response = response.Where(x => x.Modelo.Contains(filtros.Modelo));
-
-        if (!string.IsNullOrEmpty(filtros.OrderBy))
-        {
-            if (filtros.OrderBy == "Marca")
-                response = response.OrderBy(x => x.Marca);
-            else if (filtros.OrderBy == "Modelo")
-                response = response.OrderBy(x => x.Modelo);
-        }
-
-        return Ok(response.ToList());
+        var cars = _service.List();
+        return Ok(cars);
     }
 
     // Route param
     [HttpGet("{id}")]
     public IActionResult Get(int id)
     {
-        var carro = _carros.FirstOrDefault(x => x.Id == id);
-        return carro is null ? NotFound() : Ok(carro);
+        var car = _service.GetById(id);
+        return car is null ? NotFound() : Ok(car);
     }
 
     [HttpPost]
-    public IActionResult Post([FromBody] Carro carro)
+    public IActionResult Post([FromBody] BaseCarRequest car)
     {
-        var errors = new List<ErrorMessage>();
-
-        if (string.IsNullOrEmpty(carro.Marca))
-            errors.Add(new ErrorMessage
-            {
-                Field = "Marca",
-                Message = "Marca é obrigatório"
-            });
-
-        if (string.IsNullOrEmpty(carro.Modelo))
-            errors.Add(new ErrorMessage
-            {
-                Field = "Modelo",
-                Message = "Modelo é obrigatório"
-            });
-
-        if (errors.Any()) // Count > 0
-            return BadRequest(errors);
-
-        carro.Id = _carros.Count + 1;
-        _carros.Add(carro); // insert
-        return Ok(carro);
+        var newCar = _service.Create(car);
+        return Ok(newCar);
     }
 
     [HttpPut("{id}")]
-    public IActionResult Put(int id, [FromBody] Carro carro)
+    public IActionResult Put(int id, [FromBody] UpdateCarRequest car)
     {
-        var carroOriginal = _carros.FirstOrDefault(x => x.Id == id);
-
-        if (carroOriginal is null)
-            return NotFound();
-
-        var errors = new List<ErrorMessage>();
-
-        if (string.IsNullOrEmpty(carro.Marca))
-            errors.Add(new ErrorMessage
-            {
-                Field = "Marca",
-                Message = "Marca é obrigatório"
-            });
-
-        if (string.IsNullOrEmpty(carro.Modelo))
-            errors.Add(new ErrorMessage
-            {
-                Field = "Modelo",
-                Message = "Modelo é obrigatório"
-            });
-
-        if (errors.Any()) // Count > 0
-            return BadRequest(errors);
-
-        // Update
-        carroOriginal.Marca = carro.Marca;
-        carroOriginal.Modelo = carro.Modelo;
-
-        return Ok(carroOriginal);
+        car.Id = id;
+        var updatedCar = _service.Update(car);
+        return Ok(updatedCar);
     }
 
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {
-        var carroOriginal = _carros.FirstOrDefault(x => x.Id == id);
-
-        if (carroOriginal is null)
-            return NotFound();
-
-        _carros.Remove(carroOriginal);
+        _service.Delete(id);
         return NoContent();
     }
 }
@@ -132,28 +68,3 @@ public class CarroFilters
     public string? Modelo { get; set; }
     public string? OrderBy { get; set; }
 }
-
-public class Carro
-{
-    public Carro()
-    {
-
-    }
-
-    public Carro(int id, string marca, string modelo)
-    {
-        Id = id;
-        Marca = marca;
-        Modelo = modelo;
-    }
-
-    public int Id { get; set; }
-
-    //[Required(ErrorMessage = "Campo obrigatório")]
-    public string? Marca { get; set; }
-
-    //[Required(ErrorMessage = "Campo obrigatório")]
-    public string? Modelo { get; set; }
-}
-
-//public record Carro(int id, string marca, string modelo);
