@@ -1,5 +1,4 @@
 ﻿using Application.Services;
-using Domain.Entities;
 using Domain.Requests;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,11 +14,11 @@ namespace WebApplication1.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class CarrosController : ControllerBase
+public class CarsController : ControllerBase
 {
     private readonly ICarService _service;
 
-    public CarrosController(ICarService service)
+    public CarsController(ICarService service)
     {
         _service = service;
     }

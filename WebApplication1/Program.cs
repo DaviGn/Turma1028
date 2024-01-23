@@ -5,6 +5,9 @@ using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.Threading.Tasks;
+using Web.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,17 +23,26 @@ builder.Services.AddSingleton<ICarRepository, CarRepository>();
 
 var app = builder.Build();
 
+// Middlewares
+app.UseMiddleware<ExceptionMiddleware>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    // Swagger
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ApiKeyMiddleware>();
+
+// Redirect HTTPs
 app.UseHttpsRedirection();
 
+// Autorização
 app.UseAuthorization();
 
+// Controllers
 app.MapControllers();
 
 app.Run();

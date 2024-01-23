@@ -62,6 +62,11 @@ public class CarService : ICarService
         if (errors.Any())
             throw new BadRequestException(errors);
 
+        var existingCar = _repository.GetById(request.Id);
+
+        if (existingCar is null)
+            throw new NotFoundException("Car not found!");
+
         var updateCar = CarMapper.ToEntity(request);
         var car = _repository.Update(updateCar);
         return CarMapper.ToResponse(car);
