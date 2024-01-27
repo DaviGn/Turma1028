@@ -1,17 +1,31 @@
 ﻿using Application.Services;
+using Domain.Options;
 using Domain.Requests;
 using Domain.Validators;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Threading.Tasks;
 using Web.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<ClassOptions>(
+    builder.Configuration.GetSection(ClassOptions.Section));
+
+builder.Services.AddCors(config =>
+{
+    config.AddPolicy("AllowOrigin", options => options
+                                                 .AllowAnyOrigin()
+                                                 .AllowAnyMethod());
+});
+
 // Add services to the container.
+//builder.Services.AddControllers(options =>
+//{
+//    options.Filters.Add(typeof(CustomActionFilterAttribute));
+//});
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -34,7 +48,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseMiddleware<ApiKeyMiddleware>();
+app.UseCors("AllowOrigin");
+
+//app.UseMiddleware<ApiKeyMiddleware>();
 
 // Redirect HTTPs
 app.UseHttpsRedirection();

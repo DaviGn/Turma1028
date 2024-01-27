@@ -1,6 +1,11 @@
 ﻿using Application.Services;
+using Domain.Options;
 using Domain.Requests;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using System;
+using Web.Filters;
 
 namespace WebApplication1.Controllers;
 
@@ -14,16 +19,22 @@ namespace WebApplication1.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[CustomActionFilter]
+[ExceptionFilter]
 public class CarsController : ControllerBase
 {
+    private readonly ClassOptions _config;
     private readonly ICarService _service;
 
-    public CarsController(ICarService service)
+    public CarsController(ICarService service, IOptions<ClassOptions> config)
     {
+        _config = config.Value;
         _service = service;
     }
 
     [HttpGet]
+    //[CustomActionFilter]
+    //[RequireAuth]
     public IActionResult List([FromQuery] CarroFilters filtros)
     {
         var cars = _service.List();
