@@ -14,10 +14,9 @@ public interface ICarRepository
     void Delete(int id);
 }
 
-// Responsabilidade: fornecer métodos para manipulação do "banco de dados"
 public class CarRepository : ICarRepository
 {
-    private List<Car> _cars = new List<Car>(); // Banco de dados
+    private List<Car> _cars = new List<Car>();
 
     public List<Car> List()
     {

@@ -1,5 +1,4 @@
 ﻿using Application.Services;
-using Domain.Options;
 using Domain.Requests;
 using Domain.Validators;
 using Infrastructure.Repositories;
@@ -9,9 +8,6 @@ using Microsoft.Extensions.Hosting;
 using Web.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.Configure<ClassOptions>(
-    builder.Configuration.GetSection(ClassOptions.Section));
 
 builder.Services.AddCors(config =>
 {
@@ -31,9 +27,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSingleton<ICarRepository, CarRepository>();
 builder.Services.AddScoped<ICarService, CarService>();
 builder.Services.AddScoped<IValidator<BaseCarRequest>, CarValidator>();
-builder.Services.AddSingleton<ICarRepository, CarRepository>();
+
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IValidator<BaseUserRequest>, UserValidator>();
 
 var app = builder.Build();
 
@@ -49,16 +49,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowOrigin");
-
 //app.UseMiddleware<ApiKeyMiddleware>();
-
-// Redirect HTTPs
 app.UseHttpsRedirection();
-
-// Autorização
 app.UseAuthorization();
-
-// Controllers
 app.MapControllers();
 
 app.Run();
