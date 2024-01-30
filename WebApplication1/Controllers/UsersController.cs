@@ -18,16 +18,16 @@ public class UsersController : ControllerBase
     [HttpGet]
     public IActionResult List()
     {
-        var cars = _service.List();
-        return Ok(cars);
+        var users = _service.List();
+        return Ok(users);
     }
 
     // Route param
     [HttpGet("{id}")]
     public IActionResult Get(int id)
     {
-        var car = _service.GetById(id);
-        return car is null ? NotFound() : Ok(car);
+        var user = _service.GetById(id);
+        return user is null ? NotFound() : Ok(user);
     }
 
     [HttpPost]

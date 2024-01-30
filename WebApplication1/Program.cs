@@ -1,13 +1,21 @@
 ﻿using Application.Services;
+using Domain.Options;
 using Domain.Requests;
 using Domain.Validators;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Web.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<TokenOptions>(
+    builder.Configuration.GetSection(TokenOptions.Section));
+
+builder.Services.Configure<PasswordHashOptions>(
+    builder.Configuration.GetSection(PasswordHashOptions.Section));
 
 builder.Services.AddCors(config =>
 {
@@ -23,9 +31,20 @@ builder.Services.AddCors(config =>
 //});
 
 builder.Services.AddControllers();
+
+// Desativa mensagem de erros automáticos do .NET
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddSingleton<IHashingService, HashingService>();
+builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddSingleton<IAuthService, AuthService>();
 
 builder.Services.AddSingleton<ICarRepository, CarRepository>();
 builder.Services.AddScoped<ICarService, CarService>();

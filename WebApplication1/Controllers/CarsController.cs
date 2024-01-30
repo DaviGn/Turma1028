@@ -4,14 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WebApplication1.Controllers;
 
-//Create
-//Read
-//Update
-//Delete
-
-// Inversion of Control
-// Injeção de dependência
-
 [ApiController]
 [Route("[controller]")]
 //[CustomActionFilter]

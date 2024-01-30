@@ -21,11 +21,14 @@ public class UserService : IUserService
 {
     private readonly IValidator<BaseUserRequest> _validator;
     private readonly IUserRepository _repository;
+    private readonly IHashingService _hashingService;
 
-    public UserService(IUserRepository repository, IValidator<BaseUserRequest> validator)
+    public UserService(IUserRepository repository, IValidator<BaseUserRequest> validator,
+        IHashingService hashingService)
     {
         _validator = validator;
         _repository = repository;
+        _hashingService = hashingService;
     }
 
     public List<UserResponse> List()
@@ -49,6 +52,8 @@ public class UserService : IUserService
             throw new BadRequestException(errors);
 
         var newUser = UserMapper.ToEntity(request);
+        newUser.Password = _hashingService.Hash(newUser.Password!);
+
         var user = _repository.Create(newUser);
         return UserMapper.ToResponse(user);
     }
@@ -66,6 +71,8 @@ public class UserService : IUserService
             throw new NotFoundException("User not found!");
 
         var updateUser = UserMapper.ToEntity(request);
+        updateUser.Password = _hashingService.Hash(updateUser.Password!);
+
         var user = _repository.Update(updateUser);
         return UserMapper.ToResponse(user);
     }

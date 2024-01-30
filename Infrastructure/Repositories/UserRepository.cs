@@ -17,16 +17,7 @@ public interface IUserRepository
 
 public class UserRepository : IUserRepository
 {
-    private List<User> _users = new List<User>()
-    {
-        new User
-        {
-            Id = 1,
-            Name = "Davi",
-            Email = "davign20@gmail.com",
-            Password = "123456",
-        }
-    };
+    private List<User> _users = new List<User>();
 
     public List<User> List()
     {
