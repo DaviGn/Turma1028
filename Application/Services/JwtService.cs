@@ -5,7 +5,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
 using System.Security.Claims;
 using System.Text;
 
@@ -32,8 +31,7 @@ public class JwtService : IJwtService
 
     public JwtResponse CreateToken(User user)
     {
-        Guid tokenId = Guid.NewGuid();
-        var identity = CreateClaimsIdentity(user, tokenId);
+        var identity = CreateClaimsIdentity(user);
 
         var tokenHandler = new JwtSecurityTokenHandler();
 
@@ -85,13 +83,13 @@ public class JwtService : IJwtService
         }
     }
 
-    private ClaimsIdentity CreateClaimsIdentity(User user, Guid tokenId)
+    private ClaimsIdentity CreateClaimsIdentity(User user)
     {
         var userDataClaims = new Claim[] {
-            new Claim(ClaimTypes.Sid, tokenId.ToString()),
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email!),
             new Claim(ClaimTypes.Name, user.Name!),
+            new Claim(ClaimTypes.Role, user.Role!),
         };
         return new ClaimsIdentity(userDataClaims);
     }

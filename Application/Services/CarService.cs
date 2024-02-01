@@ -1,5 +1,4 @@
-﻿using Domain.Entities;
-using Domain.Exceptions;
+﻿using Domain.Exceptions;
 using Domain.Mappers;
 using Domain.Requests;
 using Domain.Responses;
@@ -7,16 +6,17 @@ using Domain.Validators;
 using Infrastructure.Repositories;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Application.Services;
 
 public interface ICarService
 {
-    List<CarResponse> List();
-    CarResponse? GetById(int id);
-    CarResponse Create(BaseCarRequest newCar);
-    CarResponse Update(UpdateCarRequest updatedCar);
-    void Delete(int id);
+    Task<List<CarResponse>> List(int userId);
+    Task<CarResponse?> GetById(int id, int userId);
+    Task<CarResponse> Create(BaseCarRequest newCar);
+    Task<CarResponse> Update(UpdateCarRequest updatedCar);
+    Task Delete(int id, int userId);
 }
 
 public class CarService : ICarService
@@ -30,20 +30,24 @@ public class CarService : ICarService
         _repository = repository;
     }
 
-    public List<CarResponse> List()
+    public async Task<List<CarResponse>> List(int userId)
     {
-        var cars = _repository.List();
+        var cars = await _repository.List(userId);
         var response = cars.Select(car => CarMapper.ToResponse(car)).ToList();
         return response;
     }
 
-    public CarResponse? GetById(int id)
+    public async Task<CarResponse?> GetById(int id, int userId)
     {
-        var car = _repository.GetById(id);
-        return car is null ? null : CarMapper.ToResponse(car);
+        var car = await _repository.GetById(id);
+
+        if (car is null || car.UserId != userId)
+            return null;
+
+        return CarMapper.ToResponse(car);
     }
 
-    public CarResponse Create(BaseCarRequest request)
+    public async Task<CarResponse> Create(BaseCarRequest request)
     {
         var errors = _validator.Validate(request);
 
@@ -51,29 +55,29 @@ public class CarService : ICarService
             throw new BadRequestException(errors);
 
         var newCar = CarMapper.ToEntity(request);
-        var car = _repository.Create(newCar);
+        var car = await _repository.Create(newCar);
         return CarMapper.ToResponse(car);
     }
 
-    public CarResponse Update(UpdateCarRequest request)
+    public async Task<CarResponse> Update(UpdateCarRequest request)
     {
         var errors = _validator.Validate(request);
 
         if (errors.Any())
             throw new BadRequestException(errors);
 
-        var existingCar = _repository.GetById(request.Id);
+        var existingCar = await _repository.GetById(request.Id);
 
         if (existingCar is null)
             throw new NotFoundException("Car not found!");
 
         var updateCar = CarMapper.ToEntity(request);
-        var car = _repository.Update(updateCar);
+        var car = await _repository.Update(updateCar);
         return CarMapper.ToResponse(car);
     }
 
-    public void Delete(int id)
+    public async Task Delete(int id, int userId)
     {
-        _repository.Delete(id);
+        await _repository.Delete(id, userId);
     }
 }

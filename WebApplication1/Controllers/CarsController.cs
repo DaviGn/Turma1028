@@ -1,11 +1,16 @@
 ﻿using Application.Services;
 using Domain.Requests;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace WebApplication1.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Authorize]
 //[CustomActionFilter]
 //[ExceptionFilter]
 public class CarsController : ControllerBase
@@ -20,39 +25,44 @@ public class CarsController : ControllerBase
     [HttpGet]
     //[CustomActionFilter]
     //[RequireAuth]
-    public IActionResult List([FromQuery] CarroFilters filtros)
+    public async Task<IActionResult> List([FromQuery] CarroFilters filtros)
     {
-        var cars = _service.List();
+        var userId = Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var cars = await _service.List(userId);
         return Ok(cars);
     }
 
     // Route param
     [HttpGet("{id}")]
-    public IActionResult Get(int id)
+    public async Task<IActionResult> Get(int id)
     {
-        var car = _service.GetById(id);
+        var userId = Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var car = await _service.GetById(id, userId);
         return car is null ? NotFound() : Ok(car);
     }
 
     [HttpPost]
-    public IActionResult Post([FromBody] BaseCarRequest car)
+    //[Authorize(Roles = "Teacher")]
+    public async Task<IActionResult> Post([FromBody] BaseCarRequest car)
     {
-        var newCar = _service.Create(car);
+        car.UserId = Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var newCar = await _service.Create(car);
         return Ok(newCar);
     }
 
     [HttpPut("{id}")]
-    public IActionResult Put(int id, [FromBody] UpdateCarRequest car)
+    public async Task<IActionResult> Put(int id, [FromBody] UpdateCarRequest car)
     {
         car.Id = id;
-        var updatedCar = _service.Update(car);
+        var updatedCar = await _service.Update(car);
         return Ok(updatedCar);
     }
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        _service.Delete(id);
+        var userId = Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        await _service.Delete(id, userId);
         return NoContent();
     }
 }

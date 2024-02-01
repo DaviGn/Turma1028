@@ -9,7 +9,8 @@ public static class UserMapper
     {
         Id = user.Id,
         Name = user.Name,
-        Email = user.Email
+        Email = user.Email,
+        Role = user.Role
     };
 
     public static User ToEntity(BaseUserRequest user) => new User
@@ -17,6 +18,7 @@ public static class UserMapper
         Name = user.Name,
         Email = user.Email,
         Password = user.Password,
+        Role = user.Role
     };
 
     public static User ToEntity(UpdateUserRequest user) => new User
@@ -25,5 +27,6 @@ public static class UserMapper
         Name = user.Name,
         Email = user.Email,
         Password = user.Password,
+        Role = user.Role
     };
 }

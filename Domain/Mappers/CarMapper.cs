@@ -15,6 +15,7 @@ public static class CarMapper
 
     public static Car ToEntity(BaseCarRequest car) => new Car
     {
+        UserId = car.UserId,
         Brand = car.Brand,
         Model = car.Model
     };

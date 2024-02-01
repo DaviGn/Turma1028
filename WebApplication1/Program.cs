@@ -2,11 +2,20 @@
 using Domain.Options;
 using Domain.Requests;
 using Domain.Validators;
+using Infrastructure;
 using Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.Configuration;
+using System.Text;
 using Web.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +31,40 @@ builder.Services.AddCors(config =>
     config.AddPolicy("AllowOrigin", options => options
                                                  .AllowAnyOrigin()
                                                  .AllowAnyMethod());
+});
+
+var provider = builder.Services.BuildServiceProvider();
+var tokenOptions = provider.GetRequiredService<IOptions<TokenOptions>>();
+
+var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenOptions.Value.Key!));
+builder.Services.AddAuthentication(x =>
+{
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+      .AddJwtBearer(options =>
+      {
+          options.RequireHttpsMetadata = false;
+          options.SaveToken = true;
+
+          options.TokenValidationParameters = new TokenValidationParameters
+          {
+              IssuerSigningKey = securityKey,
+              ValidateIssuerSigningKey = true,
+
+              ValidateAudience = true,
+              ValidAudience = tokenOptions.Value.Audience,
+              ValidateIssuer = true,
+              ValidIssuer = tokenOptions.Value.Issuer,
+              ValidateLifetime = true
+          };
+      });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Bearer", new AuthorizationPolicyBuilder()
+        .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser().Build());
 });
 
 // Add services to the container.
@@ -42,15 +85,20 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<IHashingService, HashingService>();
-builder.Services.AddSingleton<IJwtService, JwtService>();
-builder.Services.AddSingleton<IAuthService, AuthService>();
+builder.Services.AddDbContext<Context>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlDatabase"));
+});
 
-builder.Services.AddSingleton<ICarRepository, CarRepository>();
+builder.Services.AddScoped<IHashingService, HashingService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<ICarRepository, CarRepository>();
 builder.Services.AddScoped<ICarService, CarService>();
 builder.Services.AddScoped<IValidator<BaseCarRequest>, CarValidator>();
 
-builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IValidator<BaseUserRequest>, UserValidator>();
 
@@ -70,7 +118,13 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowOrigin");
 //app.UseMiddleware<ApiKeyMiddleware>();
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+var services = builder.Services.BuildServiceProvider();
+var context = services.GetRequiredService<Context>();
+
+await context.Database.EnsureCreatedAsync();
 
 app.Run();

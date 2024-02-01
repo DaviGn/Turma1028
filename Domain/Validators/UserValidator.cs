@@ -31,6 +31,13 @@ public class UserValidator : IValidator<BaseUserRequest>
                 Message = "Field is required!"
             });
 
+        if (string.IsNullOrEmpty(car.Role))
+            errors.Add(new ErrorMessageResponse
+            {
+                Field = "Role",
+                Message = "Field is required!"
+            });
+
 
         return errors;
     }
